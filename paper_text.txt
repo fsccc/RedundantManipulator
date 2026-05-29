@@ -1,0 +1,768 @@
+                IEEE TRANSACTIONS ON INDUSTRIAL ELECTRONICS, VOL. 68, NO. 2, FEBRUARY 2021                                                    1525
+
+
+
+
+        Dynamic Neural Networks for Motion-Force
+         Control of Redundant Manipulators: An
+                Optimization Perspective
+      Zhihao Xu , Member, IEEE, Shuai Li , Senior Member, IEEE, Xuefeng Zhou , Member, IEEE,
+                 Songbin Zhou , Taobo Cheng , and Yisheng Guan , Member, IEEE
+
+
+   Abstract—Accurate position-force control is a core and                       solve the modified QP problem online. This work general-
+challenging problem in robotics, especially for manipula-                       izes projection RNN-based position control of manipulators
+tors with redundant degrees of freedom (DOFs). For exam-                        to that of position-force control, which opens a new avenue
+ple, trajectory tracking-based control usually fails for grind-                 to shift position-force control of manipulators from pure
+ing robots due to intolerable impact forces imposed onto                        control perspective to cross design with both convergence
+the end effectors. The main difficulties lie in the coupling of                 and optimality consideration. Numerical and experimental
+motion and contact force, redundancy resolution, physical                       results show that the proposed scheme achieves accurate
+constraints, etc. In this article, we propose a novel motion-                   position-force control, and is capable of handling inequality
+force control strategy in the framework of projection re-                       constraints such as joint angular, velocity, and torque limi-
+current neural networks (RNN). Tracking error and contact                       tations, simultaneously, consumption of joint torque can be
+force are described in orthogonal spaces, respectively, and                     decreased effectively.
+by selecting minimizing joint torque as secondary task, the
+control problem is formulated as a quadratic-programming                          Index Terms—Dynamic neural network, joint torque opti-
+(QP) problem under multiple constraints. In order to obtain                     mization, motion-force control, redundancy resolution.
+real-time optimization of joint toque, which is nonconvex
+relative to joint angles, the original QP is reconstructed
+in the velocity level, where the original objective function                                           I. INTRODUCTION
+is replaced by its time derivative. Then, a dynamic neural
+                                                                                       EDUNDANT manipulators, which have more degrees
+network, which is convergence provable is established to
+
+   Manuscript received February 16, 2019; revised August 5, 2019,
+                                                                                R      of freedom (DOFs) than those required to complete a
+                                                                                given task, are more flexible than nonredundant ones. The
+October 28, 2019, and December 10, 2019; accepted January 18,                   redundant DOFs enable manipulators to realize fault-tolerant
+2020. Date of publication February 5, 2020; date of current version             control, improve operation performance and enhance reliability.
+October 30, 2020. This work was supported in part by the Foshan
+Key Technology Research Project under Grant 1920001001148, in part              Therefore, redundant manipulators have been widely used in
+by the Foshan Innovation and Entrepreneurship Team Project under                industry, agriculture, military, space exploration, etc. Conse-
+Grant 2018IT100173, in part by the Guangdong Province Key Areas                 quently, the research on redundant manipulator has been studied
+R&D Program under Grant 2019B090919002, in part by the Guang-
+Dong Academy of Sciences (GDAS) Project of Thousand doctors (post-              intensively [1]–[3].
+doctors) Introduction under Grant 2019GDASYL-0103078, in part by                   Motion control and force control construct two major
+the Guangzhou Science Research Plan C Major Project under Grant                 paradigms in redundant manipulator control. In motion control
+201804020095, in part by the Guangdong Province Science and Tech-
+nology Major Projects under Grant 2017B010110010, and in part by                problems, a basic assumption is that there is no contact between
+the Guangdong Innovative Talent Project of Young College under Grant            the robot and environment, in other words, the robot can move
+2016TQ03X463. (Corresponding author: Shuai Li.)                                 freely in the work space [4]. This problem is manifested in
+   Z. Xu and X. Zhou are with the Guangdong Key Laboratory of Modern
+Control Technology, Guangdong Institute of Intelligent Manufacturing,           applications such as painting, welding, palletizing, etc. Then,
+Guangzhou 210094, China, and also with the Foshan Tri-Co Intelli-               the core issue is to design control commands, to drive the robot
+gent Robot Technology Company, Ltd., Foshan 510360, China (e-mail:              to move according to a predefined trajectory. The control com-
+zh.xu@giim.ac.cn; xf.zhou@giim.ac.cn).
+   S. Li is with the School of Engineering, Swansea University,                 mand may be joint angular sequence [5], velocity sequence [6],
+Swansea SA2 8PP, U.K., and also with the Foshan Tri-Co Intelli-                 acceleration sequence [7], or torque sequences [8]–[10]. The
+gent Robot Technology Company, Ltd., Foshan 510360, China (e-mail:              redundancy resolution is usually used to achieve a secondary
+shuai.li@swansea.ac.uk).
+   S. Zhou and T. Cheng are with the Guangdong Key Laboratory of                task, such as avoiding obstacles [11], avoiding singularities [12],
+Modern Control Technology, Guangdong Institute of Intelligent Man-              etc. Different from motion control, force control involves the
+ufacturing, Guangzhou 210094, China (e-mail: sb.zhou@giim.ac.cn;                direct interaction between a robot and its environment. The
+tb.cheng@giim.ac.cn).
+   Y. Guan is with the Biomimetic and Intelligent Robotics Lab (BIRL),          control of contact force is capable of enhancing robot s robust-
+School of Electro-Mechanical Engineering, Guangdong University of               ness and flexibility in weak structured environment, and thus,
+Technology, Guangzhou 210094, China (e-mail: ysguan@gdut.edu.cn).               strengthen the operating ability [13]. The corresponding typical
+   Color versions of one or more of the figures in this article are available
+online at https://ieeexplore.ieee.org.                                          applications can be found in tasks such as polishing, grinding,
+   Digital Object Identifier 10.1109/TIE.2020.2970635                           assembly [14], [15], etc. In [16], a theoretical framework of
+
+                   0278-0046 © 2020 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+                                 See https://www.ieee.org/publications/rights/index.html for more information.
+1526                                                        IEEE TRANSACTIONS ON INDUSTRIAL ELECTRONICS, VOL. 68, NO. 2, FEBRUARY 2021
+
+
+
+impedance control is proposed. The basic idea is to consider the      and the constraints are formulated based on the primary task
+environment as an admittance and the robot as an impedance. By        and physical limitations. This optimization problem is usually
+maintaining a dynamic relationship between force and motion,          described as a quadratic-programming (QP) problem [31]. With
+the controller behaves as a spring–mass–damper system. A              high efficiency of parallel computing, RNNs are often used to
+hybrid position-force controller is proposed by Raibert and Craig     solve the QP-based redundancy resolution online [32]. In recent
+[17], which combines information of position and force together,      studies, projection RNN-based controllers are introduced into
+to realize simultaneous control of position and force constrains.     motion control of redundant manipulators. In [33], the RNN is
+Based on these two control frameworks, a series of controllers        modified such that projection operations to nonconvex sets are
+are proposed and verified by simulations or experiments [18],         allowed, and accumulation of the tracking error against system
+[19]. As to the system uncertainties, intelligent control methods     noise is avoided either. In [34], a manipulability optimization
+based on neural networks (NNs) [including radial basis function       scheme is proposed by maximizing its time derivative indirectly,
+NNs, fuzzy NNs, and recurrent neural networks (RNNs)] are also        numerical experiments show that this method achieves 40%
+introduced, in which the networks are used to handle system           improvement. Some extensions of projection-based RNN can be
+uncertainties and disturbances. For example, in [20], a feedfor-      found in multiple manipulator systems [35], flexible robots [36],
+ward NN-based control strategy is realized in position-based          model uncertainties [37], [38]. Despite the wonderful results on
+impedance control, in which a two-layer NN is built to modify         motion control of redundant manipulators based on the projec-
+the reference trajectory. In [21], a robust neural force control      tion RNN has achieved, to the best of our knowledge, few re-
+scheme is proposed. It is verified that the controller can make the   search on the application of the projection RNN to motion-force
+robot to track a specified desired force, and at the same time, un-   control of manipulators has been reported.
+certainties in environment location and stiffness as well as robot       In accordance with the foregoing description of the relevant
+dynamics can be compensated. In [22], a fuzzy recurrent wavelet       literature review, the position-force control problem for redun-
+neural network (RNN)-based adaptive force/motion control              dant manipulators should consist of three aspects: position-force
+scheme is proposed for a class of mobile manipulator, which           control, performance optimization, and ensuring physical limi-
+combines the advantages of recurrent technique and wavelet            tations. Therefore, in this article, we propose a projection RNN-
+networks. In [23], an adaptive impedance controller based on          based position-force control scheme for robots with redundant
+the dynamic recurrent fuzzy NN is developed for the upper             DOFs, which is capable of handling the optimal position-force
+limb rehabilitation robot, where the RNN is used to regulate the      control problem while ensuring inequality constraints. This ar-
+desired impedance control parameters between the rehabilitation       ticle is an important extension of the RNN to the force control
+robotic end effector and upper limb. Considering the motion           of robots. In Section II, the tracking error and contact force are
+planning problem in nonprehensile manipulations, Kutsuzawa            modeled, and the control problem is written as a QP problem. In
+et al. propose a sequence-to-sequence-based method [24], which        Section III, by rewriting objective function and constraints, the
+is NNs applicable for time-series conversion. In [25], this work      QP is reformulated in the velocity level. In Section IV, an RNN
+is extended to the trajectory planning problem with a contact         is built to solve the redundancy resolution problem. Stability is
+model.                                                                also proved. In Section V, verifiable numerical experiments on a
+   Although the aforementioned works have achieved great suc-         4-DOFs planar manipulator are carried out. Finally, Section VI
+cess in motion-force control of nonredundant manipulators, the        concludes this article. Before ending this section, the main
+control of redundant ones has received minor attention. Remark-       contributions are listed as follows.
+ably that the redundancy of a manipulator provides an oppor-              1) This article deals with motion-force control of redundant
+tunity to meet a secondary objective, but also sets difficulties              manipulators in the framework of projection RNNs, the
+in mathematically solving it. In [26], a position-force control               control strategy realizes real-time optimization of joint
+strategy is proposed, where the robot s motion is completely                 torque, which could save energy in industrial applications.
+decoupled into two parts: end-effector s motion is controlled            2) In the proposed control scheme, the motion-force control
+to achieve position-force control to the environment, while the               problem as well as redundancy resolution problem are
+internal motion is designed to avoid obstacles via minimizing                 reconstructed to facilitate practical implementations.
+impact forces. In [27], a robust control strategy with the capa-          3) The controller is capable of handling multiple inequality
+bility of regulating the contact force and apparent impedances is             constraints, including but not limited to angle constraints,
+designed, the controller also shows great robustness with respect             angular velocity constraints, and torque constraints. This
+to dynamic and kinematic uncertainties. In [28], by defining                  is of great significance in improving the system security.
+a function scaling, the difference between joint angle and its            4) By introducing model information into the NN, the es-
+boundaries, the limitation of joint angle is avoided as the second            tablished RNN has a simpler structure, which is helpful
+task. However, these literature requires continuous calculation               for the application in practical engineering.
+of pseudoinverse of the Jacobian matrix, which would lead to a
+huge computational burden, and at the same time, it remains a                           II. PROBLEM FORMULATION
+difficult problem in dealing with multiple constraints [29].
+   In order to handle the redundancy resolution problem for           A. Problem Formulation
+redundant manipulators, one feasible method is to transform the          In this article, we focus on position-force control problem for
+control problem into an optimization one under constraints [30].      redundant manipulators. Fig. 1 also gives a brief introduction of
+The objective function is built according to the secondary task,      a redundant robot and its operation on a workpiece. The robot is
+XU et al.: DYNAMIC NEURAL NETWORKS FOR MOTION-FORCE CONTROL OF REDUNDANT MANIPULATORS                                                            1527
+
+
+
+
+                                                                             R0 , then we have F = S Tt F t , et = S t e0 and δX t = S t δX.
+                                                                             Therefore, F and e0 can be rewritten as
+                                                                                               
+                                                                                                  F = kf S Tt Σf S t δX
+                                                                                                                         .                (5)
+                                                                                                 e0 = S Tt Σ̄f S t δX
+                                                                             Notable that in frame R0 , the displacement δX can be described
+                                                                             as δX = x − xd , where xd is the desired position signals de-
+                                                                             scribed in R0 . Using (1), (5) can be rewritten as
+                                                                                             
+                                                                                                F = kf S Tt Σf S t (f (θ) − xd )
+Fig. 1.   Brief diagram of robotic force control and typical applications.
+                                                                                                                                 .        (6)
+                                                                                               e0 = S Tt Σ̄f S t (f (θ) − xd )
+
+expected to offer a desired contact force in the vertical direction              Remark 1: Equation (6) gives the unified description of the
+of the contact surface, at the same time, the end effector is                relationship between the contact force F , position tracking error
+required to track a predefined trajectory along the surface. In the          e0 , and displacement δX in R0 . δX will lead to contact force F
+base coordinate frame R0 (00 , x0 , y 0 , z 0 ), forward kinematics          in the vertical direction, and position tracking error e0 along the
+of a serial manipulator can be written as                                    contact surface. Σf and Σ̄f are used to realize the decoupling
+                                                                             of the contact force and tracking error of the end effector.
+                            f (θ(t)) = x(t)                            (1)   When the contact surface is known, the combination of Σf ,
+where θ ∈ Rn is the vector of joint angles, and x ∈ Rm rep-                  Σ̄f , and S t enables the normalized description of the control
+resents the end-effector s coordinate vector in the frame R0 ,              tasks.
+f (•) : Rn → Rm is used to describe the forward kinematics                      In real implementations, given the desired contact force F s
+operator. For a redundant manipulator, we have n > m.                        and trajectory command xd , the manipulator s end effec-
+   By differentiating x(t) with respect to time t, we can get the            tor is expected to offer contact force F d , while tracking xd ,
+relationship between the Cartesian velocity ẋ(t) ∈ Rm and joint             i.e., F → F d , e0 → 0. For the convenience of writing in the
+velocity (or joint control signal) θ̇(t) ∈ Rn as follows:                    following sections, let A = [kf S Tt Σf S t ; S Tt Σ̄f S t ] ∈ R2m×m ,
+                                                                             r = [F T , eT0 ]T , and r d = [F d ; 0]. Then, (6) can be reformulated
+                          J(θ(t))θ̇(t) = ẋ(t)                         (2)   as
+where J(θ(t)) = ∂f (θ(t))/∂θ(t) is called the Jacobian matrix.                                       A(f (θ) − xd ) = r.                          (7)
+   In position-force control tasks, the end-effector s motion is
+                                                                               Therefore, the control objective of position-force control is to
+constrained by the contact surface. For simplicity, we define a
+                                                                             adjust the joint angles θ, to ensure r → r d .
+tool coordinate system as Rt (xt , y t , z t ), in which the axis z t is
+set in alignment with the vertical direction of the contact surface.
+                                                                             B. Joint Torque and Physical Constraints
+Obviously, the motion of end effector can be specified along xt
+and y t . In this article, frictional force between the robot and               When the end effector offers a contact force F , the cor-
+contact surface is ignored, therefore, the contact force F is in             responding torque is provided by motors at every joint. The
+alignment with z t .                                                         relationship between the contact force F and the joint torque τ
+   In the tool coordinate system Rt , let δX t be the displacement           can be formulated as
+between effector and its position command, then the contact                                              τ = J T (θ)F .                           (8)
+force F t can be formulated as
+                                                                                In the control of redundant manipulators, there would be
+                           F t = kf Σf δX t                            (3)   infinite groups of solutions to a certain control task. In order
+where kf > 0 is the stiffness coefficient, Σf = diag(0, 0, 1). Di-           to save energy during the control process, we select an objective
+agonal matrix Σf describes the relationship between the contact              function scaling energy consumption as τ T τ /2. The smaller
+force and relative displacement along different axes: 1 means                τ T τ /2 is, the lesser will be the energy consumption.
+that displacement component along z t affects the contact force,                In real implementations, the system is limited by physical
+and 0 otherwise.                                                             constraints. For example, the joint angles θ and velocities θ̇
+   Similarly, in tool coordinate system Rt , the position tracking           must not exceed their limits: θ min , θ max , θ̇ min , and θ̇ max , since
+error et can be written as                                                   the possible collisions or overheating of the motor would lead to
+                                                                             irreversible damages. At the same time, considering the bounded
+                              et = Σ̄f δX t                            (4)   torque output of the motors, the limitation of the joint torque τ
+                                                                             is described as τ min ≤ τ ≤ τ max .
+where Σ̄f = I − Σf = diag(1, 1, 0), 1 means there is a DOF of
+movement along the corresponding direction, and 0 otherwise.
+                                                                             C. Optimization Problem Formulation
+   When the contact surface is prior known, Rt can be obtained
+from R0 by a rotation matrix S t . Let F , e0 , and δX be the cor-             According to the previous descriptions, the position-force
+responding description of F t , et , and δX t in coordinate frame            control problem for redundant manipulators considering torque
+1528                                                         IEEE TRANSACTIONS ON INDUSTRIAL ELECTRONICS, VOL. 68, NO. 2, FEBRUARY 2021
+
+
+
+optimization can be formulated as                                       decreasing G2 . Therefore, in this article, we use Ġ2 instead of
+                       min G1 = τ τ /2   T
+                                                                (9a)    G2 as the new objective function. Notable that d(J T (θ)F d )/dt
+                                                                        can be formulated as
+                       s.t. τ = J T F                           (9b)                          n
+                                                                             d T                  ∂(J T (θ)F d )
+                       r d = A(f (θ) − xd )                                     (J (θ)F d ) =                    θ̇ i + J T (θ)Ḟd
+                                                                (9c)         dt               i=1
+                                                                                                       ∂θ  i                         (12)
+                       θ min ≤ θ ≤ θ max                        (9d)
+                                                                                              = [H i , . . . , H n ]θ̇ + J T (θ)Ḟd
+                       θ̇   min
+                                  ≤ θ̇ ≤ θ̇   max
+                                                                (9e)    where H i ∈ Rn is
+                                                                                                      ⎡ m                                  ⎤
+                       τ min ≤ τ ≤ τ max                        (9f)
+                                                                                                           j=1 (∂(J (j, 1)F d (j))/∂θ i )
+                                                                                            ⎢                                 ⎥
+with θ being the decision variable. Equation (9a) is the cost                               ⎢ m                              ⎥
+function to be minimized, the equality constraints (9b) describes
+                                                                                            ⎢
+                                                                               ∂(J (θ)F d ) ⎢ j=1 (∂(J (j, 2)F d (j))/∂θ i ) ⎥
+                                                                                       T
+                                                                                                                              ⎥.
+                                                                          Hi =             =⎢                                 ⎥
+the relationship between the resulting joint torque τ and contact                 ∂θ i      ⎢                                 ⎥
+                                                                                            ⎣             ···                 ⎦
+force F . The force and motion tasks of the robot are described                               m
+in (9c), and inequality constraints (9e), (9d), and (9f) show the                              j=1 (∂(J (j, n)F d (j))/∂θ i )
+physical limitations to be satisfied. By substituting (9b) into (9a),   Let H = [H 1 , . . . , H n ], then (11) can be converted as
+the optimization problem can be rewritten as
+                                                                                           Ġ2 = F Td J H θ̇ + F Td J J T Ḟd .             (13)
+                 min G1 = F T J (θ)J T (θ)F /2                 (10a)
+                                                                        It is worth pointing that the second term of (13) is independent
+                 s.t. r d = A(f (θ) − xd )                     (10b)
+                                                                        of θ̇, therefore, the objective function is equivalent to F Td J H θ̇.
+                 θ min ≤ θ ≤ θ max                             (10c)
+                                                                        B. Reconstruction of Constraints
+                 θ̇ min ≤ θ̇ ≤ θ̇ max                          (10d)
+                                                                           In this subsection, we will transform the constrains into the ve-
+                 τ min ≤ τ ≤ τ max .                           (10e)    locity level. First of all, we define a concatenated vector describ-
+To solve (10), there are two main challenges. First, as an ob-          ing force and position errors as e = r − r d = [F − F d ; e0 ],
+jective function to be minimized, F T J (θ)J T (θ)F /2 is usually       according to (7), e can be formulated as
+nonconvex relative to θ, because it is a function of J (θ). Second,                          e = A(f (θ) − xd ) − r d .                     (14)
+the equation constrain (10b) is highly nonlinear, and at the same
+time, it remains difficult to handle the inequality constraints,        Differentiating e and combing (2) yields
+especially (10d) and (10e).                                                                   ė = A(J θ̇ − ẋd ) − ṙ d .                  (15)
+       III. RECONSTRUCTION OF OPTIMIZATION PROBLEM                      In order to ensure e converges to zero, a simple controller can
+                                                                        be designed as ė = −ke, where k > 0 is a positive constant.
+   In this section, in order to overcome the aforementioned
+                                                                        According to (14) and (15), the equality constrains can be
+difficulties, the redundancy resolution problem (10) will be
+                                                                        converted in the velocity level as
+reconstructed. The objective function is first redefined, and both
+equality and inequality constrains are rebuilt in the velocity level.                AJ θ̇ = ṙ d + Aẋd − k(Af (θ) − xd ).                 (16)
+
+A. Reconstruction of Objective Function                                    As to the inequality constraints (10c) and (10d), according
+                                                                        to [30], let ω = θ̇ and define α ≥ 0 as a constant parameter
+   As to F T J (θ)J T (θ)F /2, we will replace F with the desired       to scale the negative feedback to conform the joint constraints,
+value F d . Therefore, the optimization function can be formu-          these two constraints can be formulated in the speed level as
+lated as G2 = F Td J (θ)J T (θ)F d /2.
+   Remark 2: There are two main reasons: first, according to the                                  ω min ≤ ω ≤ ω max                         (17)
+control objective, the contact force F is expected to track F d , if
+the controller is properly designed, F will eventually converge         where      ω min = max{α(θ min − θ), θ̇ min },    and      ω max =
+to F d , consequently, F Td J (θ)J T (θ)F d /2 will be equivalent       min{α(θ  max
+                                                                                      − θ), θ̇ }.
+                                                                                              max
+
+to F T J (θ)J T (θ)F /2. Second, F d is independent of θ, this             Similarly, (10e) can be built indirectly by limiting its deriva-
+replacement will reduce the computational complexity in the             tive: β(τ min − τ ) ≤ τ̇ ≤ β(τ max − τ ), where β is a positive
+control process.                                                        constant. By combining (12), the boundedness of joint torque
+   Differentiating G2 with respect to time, we have                     can be rewritten as an inequality constraint about a function
+                                                                        g(ω) as
+                                          d(J T (θ)F d )
+                Ġ2 = (J T (θ)F d )T                     .      (11)                                   g(ω) ≤ 0                             (18)
+                                                dt
+Obviously, Ġ2 describes the change of G2 . By minimizing Ġ2 ,         where          g(ω) = [β(τ min − τ ) − J T Ḟd − Hω, Hω −
+the system will be compelled to develop in the direction of             β(τ max
+                                                                                − tau) + J T Ḟd ]T ∈ R2n .
+XU et al.: DYNAMIC NEURAL NETWORKS FOR MOTION-FORCE CONTROL OF REDUNDANT MANIPULATORS                                                 1529
+
+
+
+C. Reformulation and Convexification
+   According to the aforementioned description, in order to
+achieve position-force control of redundant manipulators, in-
+stead of solving (10) directly, one feasible solution is to solve
+the optimization problem in the velocity level as
+                        min F Td J Hω                       (19a)
+                        s.t. r r = AJ ω                     (19b)
+                        g(ω) ≤ 0                            (19c)    Fig. 2. Control structure of the proposed projection RNN-based control
+                                                                     strategy.
+                        ω∈Ω                                 (19d)
+where r r = ṙ d + Aẋd − k(Af (θ) − xd ) and Ω = {ω ∈
+Rn |ω min ≤ ω i ≤ ω max                                                 λ̇1 = r r − AJ ω                                           (23b)
+      i             i } is a convex set. It is remarkable that
+the objective function described in (19a) is nonconvex relative         λ̇2 = (λ2 − (λ2 + g(ω))+ )                                  (23c)
+to ω. Therefore, (19b) is introduced to convexify (19a). The final
+form of the optimization problem is described as
+                                                                                     ∂g 1          ∂g m
+      min F Td J Hω + (AJ ω − r r )T (AJ ω − r r )          (20a)    where ∇g = (         , . . . , 2 ) = [−H T , H T ] ∈ Rn×2n ,  is
+                                                                                     ∂ω             ∂ω
+                                                                     a positive constant scaling the convergence of (23). The pro-
+      s.t. r r = AJ ω                                       (20b)
+                                                                     jection operator PΩ plays an important role in guaranteeing the
+      g(ω) ≤ 0                                              (20c)    boundedness of the output of NN, i.e., the boundedness of ω
+                                                                     can be ensured by introducing PΩ . As described in (17), based
+      ω ∈ Ω.                                                (20d)
+                                                                     on the escape velocity method, both the boundedness of joint
+So far, we have reconstructed the position-force control with        angles and velocities are guaranteed.
+joint torque optimization problem into a quadratic programming          The schematic diagram of the proposed control structure is
+issue under constraints. However, the QP problem (20) cannot         shown in Fig. 2. Based on the problem formulation, the position
+be solved directly.                                                  and force controller (14)–(16) are described in the form of
+                                                                     equality constraint r r = AJ ω, and the physical constraints
+        IV. RNN-BASED REDUNDANCY RESOLUTION                          (10c)–(10e) are formulated as the inequality constraint g(ω) ≤
+                                                                     0. With the introduction of joint torque optimization scheme
+  In this section, in order to solve the optimization problem
+                                                                     (19a) and the QP-type problem formulation, a projection RNN
+(20), an expanded RNN is built to obtain the optimal solution of
+                                                                     is established to obtain the control command in real time.
+(20). Stability will be also discussed.
+                                                                         Remark 3: The architecture of the established RNN is also
+                                                                     shown in Fig. 2. The network is organized in a one-layer archi-
+A. RNN Design
+                                                                     tecture, which consists of 2m + 3n neurons, namely ω ∈ Rn ,
+   First, let λ1 ∈ R2 m and λ2 ∈ R2n be dual variables to con-       λ1 ∈ R2 m, and λ2 ∈ R2n . Despite the difference between the
+straints (20b) and (20c), a Lagrange function is defined as          proposed NN with traditional RNNs [20], from both the math-
+         L = F Td J Hω + (AJ ω − r r )T (AJ ω − r r )                ematical description (23) and the architecture, the states ω, λ1 ,
+                                                                     and λ2 are updated recurrently, i.e., one characteristic of the
+              + λT1 (r r − AJ ω) + λT2 g(ω).                 (21)    established NN can be found that the NN uses its historical
+                                                                     information to calculate the output at current moment, which
+According to Karush− Kuhn− Tucker condition, the optimal
+                                                                     is also a typical feature of RNNs. According to the previous
+solution of the optimization problem (20) can be equivalently
+                                                                     research [40]–[43], NNs with similar structure proposed to solve
+formulated as
+                                                                     the robot kinematic control problem are also called RNN. We
+                                    ∂L                               expand this kind of the RNN to the field of robot force control,
+                     ω = P Ω (ω −      )                (22a)
+                                    ∂ω                               which is also a main contribution of this article.
+                     r r = AJ ω                             (22b)
+                                          +
+                     λ2 = (λ2 + g(ω))                       (22c)    B. Stability Analysis
+where P Ω (x) = argminy∈Ω ||y − x|| is a projection opera-              In this part, theoretical analysis of stability and convergence
+tion to convex set Ω, and (x)+ = (x+                  + T     +
+                                         1 , . . . , x2n ) , xi =    of the closed-loop system using the proposed NN (23).
+max(xi , 0).                                                            First of all, several important definitions and Lemmas are
+   In order to solve (22), an expanded RNN is designed as            presented, which is very useful in stability analysis.
+                                                                         Definition 1: A continuously differentiable function F (•) is
+   ω̇ = −ω + P Ω (ω − H T J T F d − J T AT (AJ ω − r r )
+                                                                     said to be monotone if ∇F + ∇F T is positive semidefinite,
+           + J T AT λ1 − ∇gλ2 )                             (23a)    where ∇F is the gradient of F (•).
+1530                                                         IEEE TRANSACTIONS ON INDUSTRIAL ELECTRONICS, VOL. 68, NO. 2, FEBRUARY 2021
+
+
+
+   Lemma 1: [39] A dynamic NN is said to converge to the
+equilibrium point if it satisfies
+
+                 κẋ = −x + P S (x − F (x))                    (24)
+
+where κ > 0 and > 0 are constant parameters, and P S =
+argminy∈S ||y − x|| is a projection operator to closed set S.
+   So far, a theorem about the convergence of the redundancy
+resolution problem can be described as follows.                        Fig. 3. 4-DOF redundant manipulator to be simulated in this arti-
+   Theorem 1: Given the motion-force control problem for re-           cle. (a) Physical structure of the four-link robot manipulator. (b) D–H
+                                                                       parameters.
+dundant manipulators with torque optimization under physical
+constraints as (20), the RNN (23) is stable and will globally
+converge to the optimal solution of (20).                                    V. SIMULATIVE VERIFICATIONS AND COMPARISONS
+   Proof: Let ξ = [ω T , λT1 , λT2 ]T , the proposed RNN (23) can be      In this section, numerical results based on a planar 4-DOF
+written as                                                             manipulator are carried out to show the validity of the estab-
+                   ξ̇ = −ξ + P Ω̄ [ξ − F (ξ)]                 (25)    lished control scheme. First of all, we will check the control
+                                                                       performance when the end effector is expected to move to a
+where F (ξ) = [F 1 (ξ), F 2 (ξ), F 3 (ξ)]T ∈ R2m+3n , in which         specified point. Second, position-force control along a straight
+  ⎡ ⎤                                                                  line is carried out, in which time-varying desired contact force
+    F1                                                                 is considered, and the optimization performance is verified by
+  ⎢ ⎥                                                                  comparing with the scheme without optimization (by letting
+  ⎣F 2 ⎦ =
+                                                                       H T J T F d in (23a) be 0). Finally, comparative simulations be-
+    F3
+                                                                       tween the controller (23) with Jacobian-matrix-pseudoinverse
+  ⎡                                                        ⎤
+    H T J T F d + J T AT (AJ ω − r r ) − J T AT λ1 + ∇gλ2              (JMPI)-based methods are conducted to show the superiority of
+  ⎢                                                        ⎥           the proposed control scheme.
+  ⎣                    λ1 − r r + AJ ω                     ⎦.
+                            −g(ω)                                      A. Simulation Setup
+  Let ∇F (ξ) = ∂F /∂ξ, we have                                             Fig. 3(a) gives a brief introduction of a 4-DOF planar re-
+              ⎡                                       ⎤                dundant manipulator to be simulated in this article, and D–H
+                J T AT AJ    −J T AT              ∇g                   parameters of the robot is shown in Fig. 3(b). We have m = 2
+              ⎢                                      ⎥                 and n = 4. A contact surface in the workspace can be described
+     ∇F (ξ) = ⎣ AJ             I                   0 ⎦.        (26)
+                                                                       as y = 0, the end effector can move freely along the hori-
+                 −(∇g)  T
+                               0                   0
+                                                                       zontal axis, and the desired contact force F d is aligned with
+It is remarkable that                                                  the vertical direction. It is notable that when the manipulator
+                            ⎡                               ⎤          is planar, the coordination system R0 (00 , x0 , y 0 , z 0 ) degener-
+                         2J T AT AJ              0        0            ates to R0 (00 , x0 , y 0 ), then the matrices Σf and Σ̄f are se-
+                       ⎢                                    ⎥          lected as Σf = diag([0, 1]) and Σ̄f = diag([1, 0]), respectively.
+  ∇F (ξ) + (∇F (ξ))T = ⎣      0                 2I        0⎦ . (27)
+                              0                  0        0            The stiffness coefficient kf is set to be 1000 N/mm. Control
+                                                                       positive control gains are set as α = 10, β = 10, k = 8, and
+From Definition 1, F (ξ) is a monotone function of ξ.                   = 0.005, respectively. Physical constraints of joint angles,
+   According to the description of (23) and (25), P Ω̄ can be          velocities, and torque are defined as θ min = [−2, −2, −2, −2]T
+formulated as P Ω̄ = [P Ω ; P R ; P Λ ], where P R ∈ R2 m is a         rad, θ max = [2, 2, 2, 2]T rad, θ̇ min = [−2, −2, −2, −2]T rad/s,
+projection operator of λ1 to set R, with the upper and lower           θ̇ max = [2, 2, 2, 2]T rad/s, τ min = [−10, −10, −10, −10]T Nm,
+bounds being ±∞. Furthermore, (•)+ is a special case of P Λ , in       and τ max = [10, 10, 10, 10]T Nm, respectively.
+which Λ = R2n                                      2n
+               + is the nonnegative quadrant of R . Therefore,
+P Ω̄ is a projection operator to closed set Ω̄. Based on Lemma         B. Position-Force Control on A Fixed Point
+1, the proposed NN (23) is stable and will globally converge to           In this section, joint torque optimization is introduced to make
+the optimal solution of (20). The proof is completed.                 full use of redundancy resolution. The proposed position-force
+    Remark 4: In this part, due to the limited space, the proof        control scheme is first tested in a fixed point case, and then,
+cannot be expanded in detail. When F (ξ) is a monotone function        extended to dynamic cases.
+of ξ, the rest of proof can be done in two steps: first, the              In this simulation, the robot is wished to offer a con-
+boundedness of ξ should be proved, which plays an important            stant contact force F d = [0, −10]T at a fixed point xd =
+role in ensuring the boundedness of θ, θ̇, and τ . Second, the         [0.3, 0]T . The initial values of joint angles are also θ 0 =
+convergence of the RNN should be proved. Similar deduction             [1.57, −1.26, −0.52, −0.52]T rad. Numerical results are shown
+can be found in the literature [34], [39].                             in Fig. 4. At the beginning stage of simulation, the robot
+XU et al.: DYNAMIC NEURAL NETWORKS FOR MOTION-FORCE CONTROL OF REDUNDANT MANIPULATORS                                                              1531
+
+
+
+
+Fig. 4. Numerical results when the robot is controlled to offer constant
+force at a fixed point. (a) Profiles of the end effector (black dashed line)
+and the corresponding joint configurations. (b) Profiles of the position
+error. (c) Profiles of the contact force. (d) Comparison of the Euclidean
+norm of joint torque with and without optimization. (e) Profiles of joint
+angles. (f) Profiles of joint velocities.
+
+                                                                               Fig. 5. Numerical results when tracking a straight line with and with-
+moves at its maximum speed (2 rad/s), making the regulation                    out torque optimization. (a) Profiles of the end effector (black dashed
+                                                                               line) and the corresponding joint configurations without optimization.
+error converge quickly. Then, it slows down as the regulation                  (b) Optimized profiles of the end effector (black dashed line) and the
+error is small. At t = 0.5 s, robot touches the surface, which                 corresponding joint configurations without optimization. (c) Profiles of
+leads to the emergence of contact force. Using the proposed                    the position error without optimization. (d) Optimized profiles of the
+                                                                               position error. (e) Comparison of the contract force. (f) Comparison
+controller, both control error of motion and force converge                    of the Euclidean norm of joint torque with and without optimization.
+to 0 smoothly. Correspondingly, the Euclidean norm of joint                    (g) Profiles of joint angles without optimization. (h) Optimized profiles
+torque also converges to a constant value (3.7 N2 · m2 ). From                 of joint angles.
+Fig. 4(e) and (f), joint angles and velocities do not exceed
+their limits, showing that the proposed scheme could handle
+inequality constraints effectively. To further demonstrate the                 similar to the previous simulation. After t = 2 s, high preci-
+validity of the optimization scheme, comparative simulations                   sion trajectory tracking is realized by the control strategy, as
+without optimization is also carried out. The obtained Euclidean               well as the contact force. By comparing Fig. 5(c)–(f), it can
+norm of joint torque without optimization is shown as the red                  be found that the position and force tracking errors are quite
+dashed line (4.3 N2 · m2 in the stable state). After introducing               similar, i.e., the introduction of optimization scheme has little
+the joint torque optimization strategy, 16% off of torque con-                 effect on the control errors. Fig. 5(f) shows the comparison of
+sumption is achieved.                                                          Euclidean norms of joint torque with and without optimization.
+                                                                               Correspondingly, J τ decreases 16.2% from 142 to 119, showing
+C. Position-Force Control Along A Straight Line                                the validity of the proposed scheme. It is notable that, after
+                                                                               introducing optimization scheme, the third joint reaches its lower
+   In this section, the robot is controlled to offer a con-                    bound, which corresponds to the optimal joint configuration to
+stant contact force on the surface while tracking a given                      minimize joint torque consumption. Dynamic change of joint
+trajectory. The initial joint angles are selected as θ 0 =                     configurations of both controllers are as shown in Fig. 5(a)
+[1.57, −1.26, −0.52, −0.52]T rad. The desired trajectory is de-                and (b).
+fined as xd = [0.25 + 0.1cos(0.5t), 0]T , and the contact force
+is defined as F d = [0, −1]T N. In order to verify the torque
+optimization, we compare the performance of controller (23)                    D. Position-Force Control Along An Arc Surface
+with the scheme without optimization. Simulation results are                      In this subsection, the end effector is controlled to track a
+shown in Fig. 5. When simulation begins (t < 0.5 s), the po-                   quarter-circular surface, which is centered at [0.3, 0.3]T m with
+sition error is big, and there is no contact between the robot                 radius 0.2 m, and provide a constant force of 10 N in the
+and surface. Correspondingly, both contact force and the result                vertical direction. The initial values of joint angles are selected
+torque are zero. Under the projection RNN-based controller                     as θ 0 = [1.5708, −0.9851, −1.1714, 0]T rad. Numerical results
+(23), joint velocities reach the maximum value, the end effector               are shown in Fig. 6. To further show the superiority of the
+approaches to the surface rapidly from the initial position, and               proposed controller, comparison with the JMPI-based method is
+the tracking error converges to zero quickly, which is very                    discussed. Using the JMPI-based method, the control command
+1532                                                                IEEE TRANSACTIONS ON INDUSTRIAL ELECTRONICS, VOL. 68, NO. 2, FEBRUARY 2021
+
+
+
+                                                                               effector is required to track certain trajectories on a horizontal
+                                                                               surface, and provide a constant contact force along the vertical
+                                                                               direction. At the same time, the orientation of the end effector is
+                                                                               expected to remain constant. Matrices Σf and Σ̄f are selected
+                                                                               as Σf = diag([0, 0, 1]) and Σ̄f = diag([1, 0, 0]), respectively.
+                                                                               The robot’s real physical constrains are θ min      i   = [−2.1] rad,
+                                                                               θ max
+                                                                                  i    =  [2.1] rad, θ̇ min
+                                                                                                        i   = [−2], and θ̇ max
+                                                                                                                           i   = [2], in the interest
+                                                                               of safety, in our experiments, we select the physical constraints
+                                                                               as θ min (i) = −2 rad, θ max (i) = 2 rad, θ̇ min (i) = −2 rad/s,
+                                                                               θ̇ max (i) = 2 rad/s, τ min (i) = −10 Nm, and τ max (i) = 10 Nm
+                                                                               for i = 1, . . . , 7, respectively. The main purpose of selecting
+                                                                               physical constraints is to verify the performance of ensuring
+                                                                               inequality constraints while avoiding damage of physical
+                                                                               mechanism of the robot. The initial joint is set as θ 0 =
+                                                                               [−0.118; 0.736; −0.004; −1.574; 0.004; 0.831; −0.909] rad,
+                                                                               and the corresponding position of the end effector is
+                                                                               x0 = [0.56; −0.068; 0.046] m. The control frequency is
+                                                                               set as 100 Hz. It is remarkable that the value of  would
+                                                                               significantly affect the convergence of the RNN,  = 0.02 is
+                                                                               selected in the same order as the control period.
+                                                                                    Remark 5: From (23), it can be observed that the force con-
+                                                                               trol is realized by adjusting the joint velocities based on the RNN,
+                                                                               which is consistent with the idea of admittance control. In our
+Fig. 6. Numerical results when tracking a time-varying force command
+along an arc surface with and without torque optimization. (a) Profiles        experiment, we assume that it provide an ideal response to the
+of the end effector and the corresponding joint configurations without         joint velocity command. It is remarkable that the uncertainties in
+optimization. (b) Optimized profiles of the end effector (black dashed         the dynamic level such as friction and disturbances do affect the
+line) and the corresponding joint configurations without optimization.
+(c) Profiles of the position error without optimization. (d) Optimized         performance of the position-force control in the outer loop, but
+profiles of the position error. (e) Comparison of contract force. (f) Com-     these uncertainties can be suppressed by the closed-loop control
+parison of Euclidean norm of joint torque with and without optimization.       mechanism of the controller itself.
+(g) Profiles of joint angles without optimization. (h) Optimized profiles of
+joint angles.
+                                                                               A. Set-Point Control
+is obtained by calculating the pseudoinverse of the Jacobian                      In this subsection, a set-point control is first conducted. The
+matrix, and torque optimization is done in the null space based                robot is controlled to provide a contact force Fd = [0; 0; 5] N at
+on the idea (13). As shown in Fig. 6(c)–(e), both controller                   the initial point. Experimental results are shown in Fig. 7. When
+could realize the convergence of tracking errors and force error.              experiment begins, the position and force error converge to 0
+The comparison of Euclidean norm of joint torque is shown in                   rapidly [see Fig. 7(a) and (b)], which is mainly due to the fact
+Fig. 6(f), it can be observed that when t < 10 s, the controller               that the initial point is the same as the expected point. The joint
+(23) obtains better optimization performance than the JMPI                     angular velocities increase from zero, and reach the maximum
+method, while t > 10 s, the JMPI method is better. By compar-                  value at t = 2.5 s. After that, θ̇ decrease to 0. Correspondingly,
+ing Fig. 6(g) and (h), when t > 10 s, despite a better optimization            the robot adjusts its joint configuration to another fixed value
+performance the JMPI method has achieved, the third joint based                [see Fig. 7(e)]. As a result, the average norm of the joint torque
+on the JMPI method exceeds its lower bound, which means the                    decreases from 3.2 to 2.8, which is a 12.5% reduction. It is also
+controller fails in guaranteeing the safety of the robot system.               remarkable that during the movement of the robot, the position
+Accordingly, the controller (23) is capable of handling physical               error, orientation error, and force error are very small. The
+limitations while optimizing joint torque, which shows the su-                 snapshots of the robot is given in Fig. 8, it can be observed that
+periority of the proposed control strategy. Dynamic change of                  the robot rotates its shoulder–elbow–wrist joints significantly,
+joint configurations of both controllers are as shown in Fig. 6(a)             and the end effector is kept to be vertical. It is notable that the
+and (b).                                                                       beginning stage can be regarded as a nonoptimized case and
+                                                                               the optimal configuration can be regarded as optimized results.
+                 VI. EXPERIMENTAL VERIFICATION                                 The control errors in Fig. 9(a)–(c) also show the effectiveness
+                                                                               of the optimization scheme.
+  In order to further show the efficiency of the developed
+control strategy, a group of experiments are conducted on a
+7-DOF redundant manipulator KUKA iiwa. Parameters of iiwa                      B. Force Control for Repeatable Trajectory and
+                                                                               Comparison With the JMPI-Based Method
+can be found in [45]. The control command is calculated on a
+host computer using the robotic operating system (ROS) system,                    In this subsection, position–force control on a repeatable
+and then, sent to the robot controller to drive the robot. The end             trajectory is conducted. The repeatable path is defined as
+XU et al.: DYNAMIC NEURAL NETWORKS FOR MOTION-FORCE CONTROL OF REDUNDANT MANIPULATORS                                                                          1533
+
+
+
+
+Fig. 7. Experimental results of the proposed controller in set-point
+control. (a) Profiles of the position errors. (b) Profiles of contact force.
+(c) Profiles of the orientation error. (d) Profiles of norm of the joint torque.
+(e) Profiles of joint angles. (f) Profiles of joint velocities.
+
+
+                                                                                   Fig. 9. Experimental results of the proposed controller along a circular
+                                                                                   trajectory and comparison with the JMPI-based method. (a) Profiles of
+                                                                                   the position errors of the proposed controller. (b) Profiles of the orien-
+                                                                                   tation error of the proposed controller. (c) Profiles of the position errors
+                                                                                   of the JMPI-based method. (d) Profiles of the orientation error of the
+                                                                                   JMPI-based method. (e) Comparison of contact force. (f) Comparison
+                                                                                   of the Euclidean norm of joint torque. (g) Profiles of joint angles of
+                                                                                   the proposed controller. (h) Profiles of joint angles of the JMPI-based
+                                                                                   method.
+
+
+
+
+Fig. 8. Snapshots of set-point force control. (a) t = 0 s. (b) t = 1 s.
+(c) t = 1.5 s. (d) t = 3 s. (e) t = 4 s. (f) t = 5 s. (g) t = 6 s.
+(h) Orientation of end effector.
+
+
+xd = [0.56 − 0.1 sin(t/2); −0.168 + 0.1 cos(t/2); 0.0458] m,
+and contact force command is also F d = [0; 0; 5] N. Experimen-
+tal results are shown in Fig. 9. The control errors are given in
+Fig. 9(a) and (b), the maximum values during the control process
+are about 1 × 10−3 m, 1 F, and 2 × 10−3 rad, respectively. At
+the beginning stage, the motion of the robot is similar to that
+of the previous fixed-point experiment. It is notable that at
+t = 4 s, the seventh joint reaches its lower limit. After introduc-                Fig. 10. Snapshots of force control along a circular trajectory.
+ing the joint torque optimization scheme, Jτ reduces from 40.3                     (a) t = 0 s. (b) t = 1 s. (c) t = 2 s. (d) t = 3 s. (e) t = 4.5 s. (f) t = 5.5 s.
+to 36.2 with a 10.8% off. The snapshots are shown in Fig. 10. It                   (g) t = 7 s. (h) t = 7.5 s. (i) t = 8.5 s. (j) t = 11.5 s. (k) t = 13 s.
+                                                                                   (l) t = 15 s.
+can be observed from both Fig. 9(g) and Fig. 10 that the robot
+adjusts its joint configuration from its initial state to an optimal
+one (the centers of shoulder–elbow–wrist joints are horizontal.)                   out. Experimental results are as shown in Fig. 9(c), (d), and
+It is remarkable that the optimal configuration is the same as the                 (h). Similar to the simulation results in Fig. 6(f) and (g), the
+set-point case, which corresponds to the fact that if the contact                  fifth joint exceeds its lower bound −2 rad during 4 < t < 7 s,
+surface is certain, the optimal configuration is unique.                           which means the tasks fails when the JMPI-based controller is
+    To further verify the efficacy of the established controller (23),             used to realize the optimal control problem in the presence of
+a comparative experiment based on the JMPI method is carried                       physical constraints in real time. Therefore, it is point worthy that
+1534                                                                                  IEEE TRANSACTIONS ON INDUSTRIAL ELECTRONICS, VOL. 68, NO. 2, FEBRUARY 2021
+
+
+
+                                                                         TABLE I
+                                       COMPARISONS AMONG THE PROPOSED MOTION-FORCE CONTROL SCHEME AND EXISTING ONES
+
+
+
+
+       ‡
+           In [26], the secondary task is defined to avoid physical limitations, therefore, only some certain kinds of inequalities can be handled by [26].
+
+
+comparing with the traditional JMPI-based methods, our con-                                                                            REFERENCES
+troller shows great potential in handling inequality constraints                                     [1] C. Yang, Y. Jiang, J. Na, Z. Li, L. Cheng, and C. Su, “Finite-time conver-
+while realizing the optimal force-position control problem in real                                       gence adaptive fuzzy control for dual-arm robot with unknown kinematics
+time.                                                                                                    and dynamics,” IEEE Trans. Fuzzy Syst., vol. 27, no. 3, pp. 574–588,
+                                                                                                         Mar. 2019.
+                                                                                                     [2] J. Na, Q. Chen, X. Ren, and Y. Guo, “Adaptive prescribed performance
+                                                                                                         motion control of servo mechanisms with friction compensation,” IEEE
+                                                                                                         Trans. Ind. Electron., vol. 61, no. 1, pp. 486–494, Jan. 2013.
+C. Comparisons                                                                                       [3] H. Wang, P. Shi, H. Li, and Q. Zhou, “Adaptive neural tracking control
+   In this subsection, comparisons between the proposed method                                           for a class of nonlinear systems with dynamic uncertainties,” IEEE Trans.
+                                                                                                         Cybern., vol. 47, no. 10, pp. 3075–3087, Sep. 2017.
+and the existing ones are shown to show the validity of this                                         [4] L. Cheng, Z. Hou, and M. Tan, “Adaptive neural network tracking con-
+article. As shown in Table I, using dynamic controllers such                                             trol for manipulators with uncertain kinematics, dynamics and actuator
+as [20], [21], [26], [28], and [44], the force control is realized                                       model,” Automatica, vol. 45, no. 10, pp. 2312–2318, Oct. 2009.
+                                                                                                     [5] L. Cheng, W. Liu, Z. Hou, Z. Li, and M. Tan, “Neural network based
+in the internal loop based on system dynamics, the uncertain                                             nonlinear model predictive control for piezoelectric actuators,” IEEE
+dynamics such as friction and disturbances are compensated by                                            Trans. Ind. Electron., vol. 62, no. 12, pp. 7717–7727, Jun. 2015.
+robust control or sliding mode control, etc. In [25], a sequence-                                    [6] H. Wang, W. Liu, J. Qiu, and P. Liu, “Adaptive fuzzy decentralized
+                                                                                                         control for a class of strong interconnected nonlinear systems with un-
+to-sequence based method is introduced to robotic systems                                                modeled dynamics,” IEEE Trans. Fuzzy Syst., vol. 26, no. 2, pp. 836–846,
+with a contact model, which also considers physical limitations                                          Oct. 2018.
+and performance optimization. In this article, the motion-force                                      [7] D. Guo and Y. Zhang, “Acceleration-level inequality-based MAN scheme
+                                                                                                         for obstacle avoidance of redundant robot manipulators,” IEEE Trans. Ind.
+controller is built in the joint velocity level, which is based on                                       Electron., vol. 61, no. 12, pp. 6903–6914, Dec. 2014.
+the idea of admittance control. The main contribution is that the                                    [8] J. Na, X. Ren, and D. Zheng, “Adaptive control for nonlinear pure-feedback
+force control problem is transformed into an optimization prob-                                          systems with high-order sliding mode observer,” IEEE Trans. Neural Net.
+                                                                                                         Learn., vol. 24, no. 3, pp. 370–382, Mar. 2013.
+lem for systems with redundant DOFs under multiple inequality                                        [9] C. Yang, Y. Jiang, W. He, J. Na, Z. Li, and B. Xu, “Adaptive parameter
+constraints in real time. The influence of uncertain dynamics is                                         estimation and control design for robot manipulators with finite-time
+handled by the proposed controller in the planning layer and                                             convergence,” IEEE Trans. Ind. Electron., vol. 65, no. 10, pp. 8112–8123,
+                                                                                                         Nov. 2018.
+the robot controller in the execution layer. It is remarkable that                                  [10] Y. Liu and S. Tong, “Barrier Lyapunov functions-based adaptive control
+this article is an important expansion of the projection RNN                                             for a class of nonlinear pure-feedback systems with full state constraints,”
+from the traditional kinematic control [33], [34] to the field of                                        Automatica, vol. 64, no. 1, pp. 70–75, Jan. 2016.
+                                                                                                    [11] D. Guo and Y Zhang, “A new inequality-based obstacle-avoidance MVN
+motion-force control problems.                                                                           scheme and its application to redundant robot manipulators,” IEEE Trans.
+                                                                                                         Syst., Man, Cybern. C, Appl. Rev., vol. 42, no. 6, pp. 1326–1340, Nov. 2012.
+                                                                                                    [12] W. Xu, J. Zhang, B. Liang, and B. Li, “Singularity analysis and avoid-
+                                                                                                         ance for robot manipulators with non-spherical wrists,” IEEE Trans. Ind.
+                                    VII. CONCLUSION                                                      Electron., vol. 63, no. 1, pp. 277–290, Jan. 2016.
+                                                                                                    [13] N. Hogan, “On the stability of manipulators performing contact tasks,”
+   This article focused on the motion-force control problem for                                          IEEE J. Robot. Automat., vol. 4, no. 6, pp. 677–686, Dec. 1988.
+redundant manipulators, while physical constraints and torque                                       [14] O. Khatib, “A unified approach for motion and force control of robot
+                                                                                                         manipulators: The operational space formulation,” IEEE J. Robot. Autom.,
+optimization were taken into consideration. First, tracking error                                        vol. 3, no. 1, pp. 43–53, Feb. 2003.
+and contact force were modeled in orthogonal spaces, respec-                                        [15] K. Kiguchi and T. Fukuda, “Position/force control of robot manipulators
+tively, and then, the control problem was turned into a QP                                               for geometrically unknown objects using fuzzy neural networks,” IEEE
+                                                                                                         Trans. Ind. Electron., vol. 47, no. 3, pp. 641–649, Jun. 2000.
+problem, which was further rewritten in the velocity level by                                       [16] N. Hogan, “Impedance control: An approach to manipulation, Parts I, II,
+rewriting the objective function and constraints. To handle mul-                                         III,” J. Dyn. Syst., Meas. Control, vol. 107, no. 1, pp. 1–23, Jun. 1985.
+tiple physical constraints, a projection RNN-based scheme was                                       [17] J. Craig, P. Hsu, and S. Sastry, “Adaptive control of mechanical manipu-
+                                                                                                         lators,” in Proc. IEEE Int. Conf. Robot. Autom., San Francisco, CA, USA,
+designed to solve the redundancy resolution online. Numerical                                            Apr. 1986, pp. 190–195.
+and experimental results showed the validity of the proposed                                        [18] Z. Li, Z. Huang, W. He, and C. Su, “Adaptive impedance control for an
+control scheme. Before ending this article, it was noteworthy                                            upper limb robotic exoskeleton using biological signals,” IEEE Trans. Ind.
+                                                                                                         Electron., vol. 62, no. 2, pp. 1664–1674, Feb. 2017.
+that this was the first article to deal with the motion-force control                               [19] C. Yang, K. Huang, H. Cheng, Y. Li, and C. Su, “Haptic identification
+of redundant manipulators in the framework of projection RNNs                                            by ELM-controlled uncertain manipulator,” IEEE Trans. Cybern., vol. 47,
+and redundant manipulators with force sensitivity.                                                       no. 8, pp. 2398–2409, Feb. 2017.
+XU et al.: DYNAMIC NEURAL NETWORKS FOR MOTION-FORCE CONTROL OF REDUNDANT MANIPULATORS                                                                        1535
+
+
+
+[20] S. Jung and T. Hsia, “Neural network impedance force control of robot          [44] Q. Xu, “Adaptive discrete-time sliding mode impedance control of a piezo-
+     manipulator,” IEEE Trans. Ind. Electron., vol. 45, no. 3, pp. 451–461,              electric microgripper,” IEEE Trans. Robot., vol. 29, no. 3, pp. 663–673,
+     Jun. 1998.                                                                          Jun. 2013.
+[21] S. Jung and T. Hsia, “Robust neural force control scheme under uncer-          [45] Z. Xu, S. Li, X. Zhou, and T. Cheng, “Dynamic neural networks based
+     tainties in robot dynamics and unknown environment,” IEEE Trans. Ind.               adaptive admittance control for redundant manipulators with model un-
+     Electron., vol. 47, no. 2, pp. 403–412, Apr. 2000.                                  certainties,” Neurocomputing, vol. 357, no. 1, pp. 271–281, Feb. 2019.
+[22] T. Mai and Y. Wang, “Adaptive force/motion control system based on
+     recurrent fuzzy wavelet CMAC neural networks for condenser cleaning
+     crawler-type mobile manipulator robot,” IEEE Trans. Control Syst. Tech-
+     nol., vol. 22, no. 5, pp. 1973–1982, Sep. 2014.
+[23] Y. Xia, J. Wang, and L. Fok, “Grasping-force optimization for multifin-                                 Zhihao Xu (Member, IEEE) received the B.E.
+     gered robotic hands using a recurrent neural network,” IEEE J. Robot.                                   and Ph.D. degrees from the School of Au-
+     Autom., vol. 20, no. 3, pp. 549–554, Jun. 2004.                                                         tomation, Nanjing University of Science and
+[24] K. Kutsuzawa, S. Sakaino, and T. Tsuji, “Sequence-to-sequence models                                    Technology, Nanjing, China, in 2010 and 2016,
+     for trajectory deformation of dynamic manipulation,” in Proc. Annu. Conf.                               respectively.
+     IEEE Ind. Electron. Soc., Nov./Jun. 2017, pp. 5227–5232.                                                   He is currently a Postdoctoral Fellow with
+[25] K. Kutsuzawa, S. Sakaino, and T. Tsuji, “Sequence-to-sequence model                                     the Robotics Team, Guangdong Institute of
+     for trajectory planning of nonprehensile manipulation including contact                                 Intelligent Manufacturing, Guangzhou, China.
+     model,” IEEE Robot. Autom. Lett., vol. 3, no. 4, pp. 3606–3613, Oct. 2018.                              His main research interests include neural net-
+[26] B. Nemec and L. Zlajpah, “Force control of redundant robots in unstruc-                                 works, force control, and intelligent information
+     tured environment,” IEEE Trans. Ind. Electron., vol. 49, no. 1, pp. 233–240,                            processing.
+     Feb. 2002.
+[27] R. Patel, H. Talebi, J. Jayender, and F. Shadpey, “A robust position and
+     force control strategy for 7-DOF redundant manipulators,” IEEE/ASME
+     Trans. Mechatron., vol. 14, no. 5, pp. 575–589, Oct. 2009.
+[28] R. Patel and F. Shadpey, Control of Redundant Robot Manipulators (Lec-
+     ture Notes in Control, Information Sciences). Berlin, Germany: Springer,                               Shuai Li (Senior Member, IEEE) received the
+     2005.                                                                                                  B.E. degree in precision mechanical engineer-
+[29] W. He, Z. Yan, and C. Sun, “Adaptive neural network control of a marine                                ing from the Hefei University of Technology,
+     vessel with constraints using the symmetric barrier Lyapunov function,”                                Hefei, China, in 2005, the M.E. degree in au-
+     IEEE Trans. Cybern., vol. 47, no. 7, pp. 1641–1651, Jul. 2017.                                         tomatic control engineering from the University
+[30] Y. Zhang, J. Wang, and Y. Xia, “A dual neural network for redundancy                                   of Science and Technology of China, Hefei, in
+     resolution of kinematically redundant manipulators subject to joint limits                             2008, and the Ph.D. degree in electrical and
+     and joint velocity limits,” IEEE Trans. Neural Netw., vol. 14, no. 4,                                  computer engineering from the Stevens Institute
+     pp. 658–667, May 2003.                                                                                 of Technology, Hoboken, NJ, USA, in 2014.
+[31] L. Jin and Y. Zhang, “G2-type SRMPC scheme for synchronous manipu-                                        He is currently an Associate Professor
+     lation of two redundant robot arms,” IEEE Trans. Cybern., vol. 45, no. 2,                              (Reader) with Swansea University, Wales, U.K.,
+     pp. 153–164, Feb. 2015.                                                        leading the Robotic Lab, conducting research on robot manipulation and
+[32] B. Cai and Y. Zhang, “Different-level redundancy-resolution and its equiv-     impedance control, multirobot coordination, distributed control, intelli-
+     alent relationship analysis for robot manipulators using gradient-descent      gent optimization and control, and legged robots.
+     and Zhang’s neural-dynamic methods,” IEEE Trans. Ind. Electron., vol. 59,
+     no. 8, pp. 3146–3155, Aug. 2012.
+[33] S. Li, Y. Zhang, and L. Jin, “Kinematic control of redundant manipulators
+     using neural networks,” IEEE Trans. Neural Netw. Learn., vol. 28, no. 10,
+     pp. 2243–2254, Oct. 2017.
+[34] L. Jin, S. Li, H. La, and X. Luo, “Manipulability optimization of redundant                           Xuefeng Zhou (Member, IEEE) received the
+     manipulators using dynamic neural networks,” IEEE Trans. Ind. Electron.,                              master’s and Ph.D. degrees in mechanical en-
+     vol. 64, no. 6, pp. 4710–4720, Aug. 2017.                                                             gineering from the South China University of
+[35] S. Li, S. Chen, B. Liu, Y. Li, and Y. Liang, “Decentralized kinematic                                 Technology, Guangzhou, China, in 2006 and
+     control of a class of collaborative redundant manipulators via recurrent                              2011, respectively.
+     neural networks,” Neurocomputing., vol. 91, no. 1, pp. 1–10, Aug. 2012.                                  He is currently the Director with Robotics
+[36] W. He, Z. Yan, Y. Sun Y. Ou, and C. Sun, “Neural-learning-based control                               Team, Guangdong Institute of Intelligent Man-
+     for a constrained robotic manipulator with flexible joints,” IEEE Trans.                              ufacturing, Guangzhou. His research interests
+     Neural Netw. Learn., vol. 29, no. 12, pp. 5993–6003, Dec. 2018.                                       include neural networks, force control, and in-
+[37] Y. Zhang, S. Chen, S. Li, and Z. Zhang, “Adaptive projection neu-                                     telligent information processing.
+     ral network for kinematic control of redundant manipulators with un-                                     He was the recipient of the Best Student Pa-
+     known physical parameters,” IEEE Trans. Ind. Electron., vol. 65, no. 6,        per Award at the 2010 IEEE International Conference on Robotics and
+     pp. 4909–4920, Jun. 2018.                                                      Biomimetics.
+[38] Z. Xu, S. Li, X. Zhou, Y. Wu, T. Cheng, and D. Huang, “Dynamic neural
+     networks based kinematic control for redundant manipulators with model
+     uncertainties,” Neurocomputing, vol. 329, no. 1, pp. 255–266, Jan. 2019.
+[39] X. Gao, “Exponential stability of globally projected dynamic systems,”
+     IEEE Trans. Neural Netw., vol. 14, no. 2, pp. 426–431, Mar. 2003.
+[40] Y. Xia, G. Feng, and J. Wang, “A novel recurrent neural network for solving                          Songbin Zhou received the M.S. degree
+     nonlinear optimization problems with inequality constraints,” IEEE Trans.                            in software engineering and the Ph.D. de-
+     Neural Netw., vol. 19, no. 8, pp. 1340–1353, Aug. 2008.                                              gree in electronic and mechanical engineer-
+[41] X. Hu and J. Wang, “A recurrent neural network for solving a class                                   ing from the South China University of Tech-
+     of general variational inequalities,” IEEE Trans. Syst., Man, Cybern. B,                             nology, Guangzhou, China, in 2004 and 2008,
+     vol. 37, no. 3, pp. 528–539, Jun. 2007.                                                              respectively.
+[42] Y. Xia and J. Wang, “Global exponential stability of recurrent neural                                   Since 2012, he has been a Professor of
+     networks for solving optimization and related problems,” IEEE Trans.                                 instrumentation with the Institute of Intelligent
+     Neural Netw., vol. 11, no. 4, pp. 1017–1022, Jul. 2000.                                              Manufacturing, Guangzhou. He is the Leader of
+[43] Y. Xia and J. Wang, “A recurrent neural network for solving nonlinear                                the Intelligent Sensing Group. His research in-
+     convex programs subject to linear constraints,” IEEE Trans. Neural Netw.,                            terest includes acoustic sensing, hyperspectral
+     vol. 16, no. 2, pp. 379–386, Mar. 2005.                                        sensing, and machine learning.
+1536                                         IEEE TRANSACTIONS ON INDUSTRIAL ELECTRONICS, VOL. 68, NO. 2, FEBRUARY 2021
+
+
+
+       Taobo Cheng received the Ph.D. degree in                                 Yisheng Guan (Member, IEEE) received the
+       welding engineering from the South China                                 M.S. degree from the Harbin Institute of Tech-
+       University of Technology, Guangzhou, China, in                           nology, Harbin, China, in 1990, and the Ph.D.
+       1998.                                                                    degree from the Beijing University of Aeronau-
+         He is currently the Director with the                                  tics and Astronautics, Beijing, China, in 1998,
+       Guangdong Institute of Intelligent Manufactur-                           both in mechanical engineering.
+       ing, Guangzhou. His current research interests                              He conducted research as a Postdoctoral Fel-
+       include intelligent manufacturing technology,                            low with the Department of Computing Science,
+       automation, and information technology.                                  University of Alberta, Edmonton, AB, Canada,
+                                                                                from 1998 to 2000, and with the Intelligent Sys-
+                                                                                tems Institute, National Institute of Advanced In-
+                                                        dustrial Science and Technology, Tsukuba, Japan, with a fellowship from
+                                                        the Japan Society for the Promotion of Science, from 2003 to 2005. He
+                                                        is currently a Professor of robotics and the Lead with Biomimetics and
+                                                        Intelligent Robotics Laboratory, School of Mechanical and Electronic
+                                                        Engineering, Guangdong University of Technology, Guangzhou, China.
+                                                        His research interests include biomimetic robotics, modular robotics,
+                                                        humanoid robotics, and soft robotics, human–robot collaboration, and
+                                                        robot learning.
+
