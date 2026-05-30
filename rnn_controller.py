@@ -8,7 +8,7 @@ class ProjectedRNNController:
         self.cfg = cfg
         self.use_torque_optimization = use_torque_optimization
 
-    def solve(self, q, j_xy, task_velocity, force, previous_dq=None):
+    def solve(self, q, j_xy, task_velocity, force, previous_dq=None, arm=None):
         n = q.size
         reg = self.cfg.controller.velocity_regularization
         hessian = j_xy.T @ j_xy + reg * np.eye(n)
@@ -23,7 +23,7 @@ class ProjectedRNNController:
             hessian = hessian + beta * (nullspace.T @ damping.T @ damping @ nullspace)
             gradient = gradient + beta * (nullspace.T @ damping.T @ tau_bias)
 
-        a_mat, b_vec = build_velocity_constraints(q, j_xy, force, self.cfg)
+        a_mat, b_vec = build_velocity_constraints(q, j_xy, force, self.cfg, arm=arm)
         if previous_dq is None:
             state = np.zeros(n, dtype=float)
         else:
@@ -32,11 +32,20 @@ class ProjectedRNNController:
             state, a_mat, b_vec, passes=self.cfg.controller.projection_passes
         )
 
-        step = self.cfg.controller.rnn_step
+        gradient_step = self.cfg.controller.rnn_step
+        ode_gain = self.cfg.controller.rnn_ode_gain
+        ode_dt = self.cfg.controller.rnn_ode_dt
         for _ in range(self.cfg.controller.rnn_iters):
-            descent = state - step * (hessian @ state + gradient)
+            projected_equilibrium = project_halfspaces(
+                state - gradient_step * (hessian @ state + gradient),
+                a_mat,
+                b_vec,
+                passes=self.cfg.controller.projection_passes,
+            )
+            state_dot = ode_gain * (projected_equilibrium - state)
+            state = state + ode_dt * state_dot
             state = project_halfspaces(
-                descent, a_mat, b_vec, passes=self.cfg.controller.projection_passes
+                state, a_mat, b_vec, passes=self.cfg.controller.projection_passes
             )
         return state
 

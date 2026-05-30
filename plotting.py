@@ -104,6 +104,14 @@ def _set_arm_axes(ax, arm, cfg):
         )
     )
     ax.axhline(cfg.surface.y_contact, color="0.20", linewidth=1.4, zorder=1)
+    ax.axhline(
+        cfg.surface.y_contact + cfg.surface.link_clearance,
+        color="#8b5a2b",
+        linestyle="--",
+        linewidth=1.0,
+        alpha=0.85,
+        zorder=1,
+    )
     ax.grid(True, linewidth=0.5, alpha=0.22)
     ax.set_xlabel("x [m]")
     ax.set_ylabel("y [m]")
@@ -182,6 +190,7 @@ def _arm_legend_handles():
         Line2D([0], [0], marker="o", color="none", markerfacecolor="#b5332f", markeredgecolor="white", markersize=8, label="end effector"),
         Line2D([0], [0], marker="x", color="#e28b21", markersize=8, markeredgewidth=2.0, linestyle="none", label="target point"),
         Line2D([0], [0], color="0.20", linewidth=2, label="contact surface"),
+        Line2D([0], [0], color="#8b5a2b", linewidth=1.5, linestyle="--", label="link clearance"),
         Line2D([0], [0], color="#b5332f", linewidth=2, label="contact force direction"),
     ]
 

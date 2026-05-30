@@ -33,6 +33,31 @@ class PlanarArm4DOF:
             j[1, col] = np.sum(self.link_lengths[active] * np.cos(angles[active]))
         return j
 
+    def point_position_and_jacobian(self, q, link_index, fraction):
+        q = np.asarray(q, dtype=float)
+        angles = np.cumsum(q)
+        effective_lengths = np.zeros(self.n, dtype=float)
+        if link_index > 0:
+            effective_lengths[:link_index] = self.link_lengths[:link_index]
+        effective_lengths[link_index] = self.link_lengths[link_index] * fraction
+
+        active = effective_lengths > 0.0
+        pos = np.array(
+            [
+                np.sum(effective_lengths[active] * np.cos(angles[active])),
+                np.sum(effective_lengths[active] * np.sin(angles[active])),
+            ],
+            dtype=float,
+        )
+
+        j = np.zeros((2, self.n), dtype=float)
+        for col in range(link_index + 1):
+            lengths = effective_lengths[col : link_index + 1]
+            local_angles = angles[col : link_index + 1]
+            j[0, col] = -np.sum(lengths * np.sin(local_angles))
+            j[1, col] = np.sum(lengths * np.cos(local_angles))
+        return pos, j
+
     def contact_force(self, q, surface):
         y = self.forward_kinematics(q)[1]
         penetration = max(0.0, surface.y_contact - y)

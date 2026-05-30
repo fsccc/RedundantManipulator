@@ -93,10 +93,34 @@ KUKA iiwa + ROS 的实验系统。
 
 - 将运动-力跟踪任务重构为二次优化问题。
 - 可选加入 torque optimization 项。
-- 使用投影 RNN 迭代求解带约束的关节速度。
+- 使用连续时间投影 RNN 神经动力学，并用显式欧拉法积分求解带约束的关节速度。
 - 提供 `make_task_velocity(...)`，用于根据位置误差和力误差生成末端任务速度。
 
 控制器的输出是关节速度 `theta_dot`。
+
+当前 RNN 不是需要训练的深度学习网络，而是在线优化求解器。对速度层 QP
+
+```text
+min 1/2 * omega^T H omega + p^T omega
+s.t. A omega <= b
+```
+
+控制器采用投影神经动力学：
+
+```text
+dot(omega) = gamma * (P_Omega(omega - alpha * (H omega + p)) - omega)
+```
+
+其中：
+
+- `omega` 是 RNN 状态，也就是待求的关节速度。
+- `P_Omega` 是到约束集合 `A omega <= b` 的投影。
+- `alpha` 对应代码中的 `rnn_step`。
+- `gamma` 对应代码中的 `rnn_ode_gain`。
+- `rnn_ode_dt` 是连续时间 RNN 的数值积分步长。
+
+每个控制周期内，代码对上述微分方程执行若干步显式欧拉积分，得到当前周期的
+关节速度命令。
 
 ### `plotting.py`
 
@@ -226,3 +250,58 @@ results/
 - 增加运动学、雅可比矩阵和约束投影的单元测试。
 - 将准静态力矩代理替换为完整动力学模型。
 - 在速度层算法验证稳定后，再扩展到 7-DOF KUKA iiwa 和 ROS 实验系统。
+
+## 7-DOF KUKA iiwa 三维仿真
+
+项目现在也包含一套 7-DOF KUKA LBR iiwa 的三维速度层运动-力混合控制仿真。
+该版本仍然是纯运动学/速度层仿真，不包含完整刚体动力学和 ROS。
+
+新增文件：
+
+```text
+config_iiwa.py
+robot_kinematics_iiwa.py
+constraints_iiwa.py
+rnn_controller_iiwa.py
+plotting_iiwa.py
+main_sim_iiwa_tasks.py
+```
+
+主要内容：
+
+- 使用 7R DH 近似模型描述 KUKA LBR iiwa 构型。
+- 末端三维正运动学和 3x7 位置 Jacobian。
+- 接触平面为 `z = 0`。
+- 末端允许轻微穿透平面以产生法向接触力。
+- 中间关节/连杆点必须保持在接触平面上方，避免非物理穿模。
+- `x-y` 平面执行位置轨迹跟踪。
+- `z` 方向通过接触力误差生成法向速度，实现力控制。
+- 支持固定点、直线和圆弧三类任务。
+- 每类任务都运行有/无 torque optimization 两组对比。
+
+运行三维 KUKA iiwa 仿真：
+
+```powershell
+python main_sim_iiwa_tasks.py
+```
+
+输出目录：
+
+```text
+results_iiwa/
+```
+
+输出图像包括：
+
+- `fixed_point_no_torque_opt.png`
+- `fixed_point_torque_opt.png`
+- `fixed_point_arm_no_torque_opt.png`
+- `fixed_point_arm_torque_opt.png`
+- `fixed_point_optimization_comparison.png`
+- `line_tracking_*`
+- `arc_tracking_*`
+
+需要注意：当前 7-DOF 版本的 torque optimization 是速度层零空间力矩代理优化。
+在同时加入接触力控制、关节约束、力矩约束和连杆避障约束后，零空间可调余量会被压缩。
+因此某些任务中力矩指标改善可能不如 4-DOF 平面示例明显。后续如果要更贴近论文实验，
+可以进一步引入更精确的 KUKA iiwa 运动学参数、动力学模型和任务优先级 QP。

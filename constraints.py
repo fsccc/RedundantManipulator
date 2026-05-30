@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def build_velocity_constraints(q, j_xy, force, cfg):
+def build_velocity_constraints(q, j_xy, force, cfg, arm=None):
     robot = cfg.robot
     dt = cfg.controller.dt
     n = q.size
@@ -27,7 +27,29 @@ def build_velocity_constraints(q, j_xy, force, cfg):
     rows.extend(-damping)
     rhs.extend(robot.tau_max + tau_contact)
 
+    if arm is not None:
+        for row, bound in build_link_avoidance_constraints(q, arm, cfg):
+            rows.append(row)
+            rhs.append(bound)
+
     return np.asarray(rows, dtype=float), np.asarray(rhs, dtype=float)
+
+
+def build_link_avoidance_constraints(q, arm, cfg):
+    clearance = cfg.surface.link_clearance
+    alpha = cfg.surface.avoidance_gain
+    sample_count = cfg.surface.avoidance_samples_per_link
+    constraints = []
+
+    # The end-effector is allowed to penetrate slightly to generate contact force.
+    # Internal joints and link samples must stay above the contact plane.
+    for link_index in range(arm.n - 1):
+        for sample in range(1, sample_count + 1):
+            fraction = sample / sample_count
+            pos, point_j = arm.point_position_and_jacobian(q, link_index, fraction)
+            height_margin = pos[1] - (cfg.surface.y_contact + clearance)
+            constraints.append((-point_j[1], alpha * height_margin))
+    return constraints
 
 
 def project_halfspaces(x, a_mat, b_vec, passes=3):
@@ -42,13 +64,27 @@ def project_halfspaces(x, a_mat, b_vec, passes=3):
     return projected
 
 
-def constraint_margins(q, dq, tau, cfg):
-    return {
+def link_clearance_margins(q, arm, cfg):
+    clearance = cfg.surface.link_clearance
+    margins = []
+    for link_index in range(arm.n - 1):
+        for sample in range(1, cfg.surface.avoidance_samples_per_link + 1):
+            fraction = sample / cfg.surface.avoidance_samples_per_link
+            pos, _ = arm.point_position_and_jacobian(q, link_index, fraction)
+            margins.append(pos[1] - (cfg.surface.y_contact + clearance))
+    return np.asarray(margins, dtype=float)
+
+
+def constraint_margins(q, dq, tau, cfg, arm=None):
+    margins = {
         "q_min": q - cfg.robot.q_min,
         "q_max": cfg.robot.q_max - q,
         "dq": cfg.robot.dq_max - np.abs(dq),
         "tau": cfg.robot.tau_max - np.abs(tau),
     }
+    if arm is not None:
+        margins["link_clearance"] = link_clearance_margins(q, arm, cfg)
+    return margins
 
 
 def worst_margin(margins):

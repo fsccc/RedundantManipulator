@@ -51,13 +51,13 @@ def run(use_torque_optimization=True):
             cfg,
             feedforward_x=feedforward_x,
         )
-        dq = controller.solve(q, j_xy, task_velocity, measured_force, dq)
+        dq = controller.solve(q, j_xy, task_velocity, measured_force, dq, arm=arm)
         tau = arm.quasistatic_torque(
             q, measured_force, dq=dq, damping=cfg.robot.joint_damping
         )
 
         q = q + cfg.controller.dt * dq
-        margins = constraint_margins(q, dq, tau, cfg)
+        margins = constraint_margins(q, dq, tau, cfg, arm=arm)
 
         history["t"].append(time)
         history["q"].append(q.copy())

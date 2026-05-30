@@ -31,6 +31,9 @@ class SurfaceConfig:
     y_contact: float = 0.0
     stiffness: float = 650.0
     force_filter: float = 0.35
+    link_clearance: float = 0.018
+    avoidance_gain: float = 18.0
+    avoidance_samples_per_link: int = 5
 
 
 @dataclass
@@ -43,6 +46,8 @@ class ControllerConfig:
     velocity_regularization: float = 2.0e-3
     torque_regularization: float = 4.0e-3
     rnn_step: float = 0.08
+    rnn_ode_gain: float = 1.0
+    rnn_ode_dt: float = 0.65
     rnn_iters: int = 80
     projection_passes: int = 3
 
