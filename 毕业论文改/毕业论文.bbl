@@ -1,0 +1,249 @@
+\begin{thebibliography}{36}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{#1}
+\expandafter\ifx\csname urlstyle\endcsname\relax\else
+  \urlstyle{same}\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \DeclareUrlCommand\doi{\urlstyle{rm}}
+  \def\eprint#1#2{#2}
+\else
+  \def\doi#1{\href{https://doi.org/#1}{\nolinkurl{#1}}}
+  \let\eprint\href
+\fi
+
+\bibitem[Hogan(1988)]{r1}
+HOGAN N.
+\newblock On the stability of manipulators performing contact
+  tasks\allowbreak[J].
+\newblock IEEE Journal on Robotics and Automation, 1988, 4\allowbreak (6):
+  677-686.
+
+\bibitem[Guo et~al.(2012)Guo and Zhang]{r2}
+GUO D, ZHANG Y.
+\newblock A new inequality-based obstacle-avoidance mvn scheme and its
+  application to redundant robot manipulators\allowbreak[J].
+\newblock IEEE Transactions on Systems, 2012, 42\allowbreak (6): 1326-1340.
+
+\bibitem[Xu et~al.(2015)Xu, Zhang, Liang, and Li]{r3}
+XU W, ZHANG J, LIANG B, et~al.
+\newblock Singularity analysis and avoidance for robot manipulators with
+  nonspherical wrists\allowbreak[J].
+\newblock IEEE Transactions on Industrial Electronics, 2015, 63\allowbreak (1):
+  277-290.
+
+\bibitem[Khatib(1987)]{r4}
+KHATIB O.
+\newblock A unified approach for motion and force control of robot
+  manipulators: The operational space formulation\allowbreak[J].
+\newblock IEEE Journal on Robotics and Automation, 1987, 3\allowbreak (1):
+  43-53.
+
+\bibitem[Kiguchi et~al.(2000)Kiguchi and Fukuda]{r5}
+KIGUCHI K, FUKUDA T.
+\newblock Position/force control of robot manipulators for geometrically
+  unknown objects using fuzzy neural networks\allowbreak[J].
+\newblock IEEE Transactions on Industrial Electronics, 2000, 47\allowbreak (3):
+  641-649.
+
+\bibitem[李正义(2011)]{r6}
+李正义.
+\newblock
+  机器人与环境间力/位置控制技术研究与应用\allowbreak[D].
+\newblock 武汉: 华中科技大学, 2011.
+
+\bibitem[张耀文王证普(2023)]{r7}
+张耀文王证普.
+\newblock 一种冗余机械臂构型优化方法\allowbreak[J].
+\newblock 哈尔滨工程大学学报, 2023, 44\allowbreak (3): 329-336.
+
+\bibitem[周宇飞李毅(2024)]{r8}
+周宇飞李毅.
+\newblock
+  基于迭代优化和神经网络补偿的超冗余机械臂半参数动力学模型辨识\allowbreak[J].
+\newblock Optics and Precision Engineering, 2024, 32\allowbreak (2): 193-207.
+
+\bibitem[张铮，朱齐丹，吕晓龙，樊星(2023)]{r9}
+张铮，朱齐丹，吕晓龙，樊星.
+\newblock 冗余机械臂运动学逆解的求解优化方法\allowbreak[J].
+\newblock 吉林大学学报(工学版), 2023: 3379-3387.
+
+\bibitem[王腾，张承瑞，陈齐志，薛祥儒(2021)]{r10}
+王腾，张承瑞，陈齐志，薛祥儒.
+\newblock
+  利用增广雅克比矩阵的冗余机械臂逆运动学求解算法\allowbreak[J].
+\newblock 科学技术与工程, 2021, 21\allowbreak (16): 6752-6757.
+
+\bibitem[Zhang et~al.(2003)Zhang, Wang, and Xia]{r11}
+ZHANG Y, WANG J, XIA Y.
+\newblock A dual neural network for redundancy resolution of kinematically
+  redundant manipulators subject to joint limits and joint velocity
+  limits\allowbreak[J].
+\newblock IEEE transactions on neural networks, 2003, 14\allowbreak (3):
+  658-667.
+
+\bibitem[张宝琛，惠建江，张琦，刘正雄，黄攀峰(2024)]{r111}
+张宝琛，惠建江，张琦，刘正雄，黄攀峰.
+\newblock
+  面向冗余机械臂避障运动规划的触控交互技术\allowbreak[J].
+\newblock 系统工程与电子技术, 2024: 254-260.
+
+\bibitem[Xu et~al.(2020)Xu and Jiang]{r112}
+XU S, JIANG Y.
+\newblock Research on trajectory tracking method of redundant manipulator based
+  on pso algorithm optimization\allowbreak[J].
+\newblock Computer Modeling in Engineering \& Sciences, 2020, 125\allowbreak
+  (1): 401-415.
+
+\bibitem[Hogan(1985)]{r12}
+HOGAN N.
+\newblock Impedance control: An approach to manipulation: Part
+  ii—implementation\allowbreak[J].
+\newblock ASME Journal of Dynamic Systems,Measurement and Control, 1985,
+  107\allowbreak (1): 1-24.
+
+\bibitem[Raibert et~al.(1981)Raibert and Craig]{r13}
+RAIBERT M~H, CRAIG J~J.
+\newblock Hybrid position/force control of manipulators\allowbreak[J].
+\newblock Journal of Dynamic Systems,Measurement and Control, 1981,
+  103\allowbreak (2): 126-133.
+
+\bibitem[郑帅，国凯，孙杰(2024)]{r131}
+郑帅，国凯，孙杰.
+\newblock
+  基于变参数阻抗控制的机器人恒力打磨研究\allowbreak[J].
+\newblock 制造技术与机床, 2024: 9-15.
+
+\bibitem[沈逸超，卢岩，姚逸辉，庄春刚(2023)]{r132}
+沈逸超，卢岩，姚逸辉，庄春刚.
+\newblock 适应未知环境的模糊阻抗控制方法\allowbreak[J].
+\newblock 机械设计与制造, 2023: 291-294.
+
+\bibitem[Jung et~al.(2000)Jung and Hsia]{r14}
+JUNG S, HSIA T~C.
+\newblock Robust neural force control scheme under uncertainties in robot
+  dynamics and unknown environment\allowbreak[J].
+\newblock IEEE Transactions on Industrial Electronics, 2000, 47\allowbreak (2):
+  403-412.
+
+\bibitem[Nemec et~al.(2002)Nemec and Zlajpah]{r15}
+NEMEC B, ZLAJPAH L.
+\newblock Force control of redundant robots in unstructured
+  environment\allowbreak[J].
+\newblock IEEE transactions on industrial electronics, 2002, 49\allowbreak (1):
+  233-240.
+
+\bibitem[宋扬(2015)]{r16}
+宋扬.
+\newblock
+  环境约束下可重构机械臂模块化力/位置控制方法研究\allowbreak[D].
+\newblock 吉林大学, 2015.
+
+\bibitem[Ohhira et~al.(2021)Ohhira, Yokota, Tatsumi, and Murakami]{r17}
+OHHIRA T, YOKOTA K, TATSUMI S, et~al.
+\newblock A robust hybrid position/force control considering motor torque
+  saturation\allowbreak[J].
+\newblock IEEE Access, 2021, 9: 34515-34528.
+
+\bibitem[Zhu et~al.(2005)Zhu and Barth]{r171}
+ZHU Y, BARTH E~J.
+\newblock Impedance control of a pneumatic actuator for contact
+  tasks\allowbreak[C]//\allowbreak
+Proceedings of the 2005 IEEE international conference on robotics and
+  automation.
+\newblock IEEE, 2005: 987-992.
+
+\bibitem[Panwar et~al.(2007)Panwar and Sukavanam]{r172}
+PANWAR V, SUKAVANAM N.
+\newblock Design of optimal hybrid position/force controller for a robot
+  manipulator using neural networks\allowbreak[J].
+\newblock Mathematical Problems in Engineering, 2007, 2007\allowbreak (1):
+  065028.
+
+\bibitem[{\c{S}}abanovi{\c{c}}(2007)]{r173}
+{\c{S}}ABANOVI{\c{C}} A.
+\newblock Smc framework in motion control systems\allowbreak[J].
+\newblock International journal of adaptive control and signal processing,
+  2007, 21\allowbreak (8-9): 731-744.
+
+\bibitem[吴天次(2022)]{r174}
+吴天次.
+\newblock 绳驱动解耦机械臂的滑模控制研究\allowbreak[D].
+\newblock 浙江理工大学, 2022.
+
+\bibitem[Mai et~al.(2014)Mai and Wang]{r18}
+MAI T, WANG Y.
+\newblock Adaptive force/motion control system based on recurrent fuzzy wavelet
+  cmac neural networks for condenser cleaning crawler-type mobile manipulator
+  robot\allowbreak[J].
+\newblock IEEE Transactions on Control Systems Technology, 2014, 22\allowbreak
+  (5): 1973-1982.
+
+\bibitem[Kati{\'c}(2006)]{r181}
+KATI{\'C} D.
+\newblock Advanced connectionist control algorithm for robotic compliance tasks
+  based on wavelet network classifier\allowbreak[J].
+\newblock Scientific Technical Review, 2006, 2: 24-28.
+
+\bibitem[Kumar et~al.(2011)Kumar, Panwar, Sukavanam, Sharma, and Borm]{r182}
+KUMAR N, PANWAR V, SUKAVANAM N, et~al.
+\newblock Neural network based hybrid force/position control for robot
+  manipulators\allowbreak[J].
+\newblock International Journal of Precision Engineering and Manufacturing,
+  2011, 12: 419-426.
+
+\bibitem[Singh et~al.(2013)Singh and Sukavanam]{r183}
+SINGH H, SUKAVANAM N.
+\newblock Stability analysis of robust adaptive hybrid position/force
+  controller for robot manipulators using neural network with
+  uncertainties\allowbreak[J].
+\newblock Neural Computing and Applications, 2013, 22: 1745-1755.
+
+\bibitem[Vladareanu et~al.(2014)Vladareanu, Yu, Gal, and Deng]{r184}
+VLADAREANU L, YU H, GAL A, et~al.
+\newblock Improvement of the walking robot dynamic stability using the dsmt and
+  the neutrosophic logic\allowbreak[C]//\allowbreak
+Proceedings of the 2014 International Conference on Advanced Mechatronic
+  Systems.
+\newblock IEEE, 2014: 43-48.
+
+\bibitem[Jalali et~al.(2009)Jalali and Ghafarian]{r185}
+JALALI L, GHAFARIAN H.
+\newblock Maintenance of robot's equilibrium in a noisy environment with fuzzy
+  controller\allowbreak[C]//\allowbreak
+2009 IEEE International Conference on Intelligent Computing and Intelligent
+  Systems: Vol.~2.
+\newblock IEEE, 2009: 761-766.
+
+\bibitem[Nagata et~al.(2004)Nagata, Watanabe, Kusumoto, Yasuda, Tsukamoto,
+  Tsuda, Omoto, Haga, and Hase]{r186}
+NAGATA F, WATANABE K, KUSUMOTO Y, et~al.
+\newblock Generation of normalized tool vector from 3-axis cl data and its
+  application to a mold polishing robot\allowbreak[C]//\allowbreak
+2004 IEEE/RSJ International Conference on Intelligent Robots and Systems
+  (IROS)(IEEE Cat. No. 04CH37566): Vol.~4.
+\newblock IEEE, 2004: 3971-3976.
+
+\bibitem[Merat(1987)]{r19}
+MERAT F.
+\newblock Introduction to robotics: Mechanics and control\allowbreak[J].
+\newblock IEEE Journal on Robotics and Automation, 1987, 3\allowbreak (2):
+  47-48.
+
+\bibitem[宗玉杰(2018)]{r20}
+宗玉杰.
+\newblock 七自由度机械臂末端力控制\allowbreak[D].
+\newblock 东南大学, 2018.
+
+\bibitem[Denavit et~al.(1955)Denavit and Hartenberg]{r21}
+DENAVIT J, HARTENBERG R~S.
+\newblock A kinematic notation for lower-pair mechanisms based on
+  matrices\allowbreak[M].
+\newblock American Society of Mechanical Engineers, 1955.
+
+\bibitem[De~Schutter et~al.(1998)De~Schutter, Bruyninckx, Zhu, and Spong]{r22}
+DE~SCHUTTER J, BRUYNINCKX H, ZHU W~H, et~al.
+\newblock Force control: A bird's eye view\allowbreak[C]//\allowbreak
+Control problems in robotics and automation.
+\newblock Springer, 1998: 1-17.
+
+\end{thebibliography}
